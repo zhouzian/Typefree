@@ -171,7 +171,6 @@ typefree/
 ├── tsconfig.json
 ├── README.md
 ├── PLAN.md
-├── .env.example
 ├── .gitignore
 ├── build/
 │   ├── icon.icns              # macOS app icon
@@ -256,15 +255,12 @@ typefree/
 **Note:** Development and packaged apps use different locations due to Electron's default behavior. The app name in development is "Electron", not "Typefree".
 
 **Files stored:**
-- `config.json` - User configuration
-- `.env` - API key storage (separate from project `.env`)
+- `config.json` - User configuration and API key
 - `typefree.log` - Application logs
 
 **Migration:** Existing `~/.typefree/` data is automatically migrated to the new location on first run of the packaged app.
 
 **Config File**: `{userData}/config.json`
-
-**API Key File**: `{userData}/.env`
 
 ```json
 {
