@@ -25,16 +25,17 @@ FFmpeg is bundled - no manual installation needed.
 
 ```bash
 # Clone the repository
-git clone <repository-url>
+git clone https://github.com/zhouzian/Typefree
 cd Typefree
 
 # Install dependencies
 npm install
 
-# Create .env file with your API key
-cp .env.example .env
-# Edit .env and add your GROQ_API_KEY
+# Build and run
+npm run start
 ```
+
+On first run, the app will prompt you to enter your Groq API key in Settings.
 
 ## Usage
 
