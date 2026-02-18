@@ -1,0 +1,157 @@
+{
+  "name": "typefree",
+  "version": "0.1.0",
+  "description": "Voice input for CLI tools like Kilo CLI and Claude Code",
+  "main": "dist/main/index.js",
+  "author": "Typefree",
+  "license": "MIT",
+  "homepage": "https://github.com/typefree/typefree",
+  "scripts": {
+    "clean": "npx tsx scripts/build.ts --clean-only",
+    "build": "npx tsx scripts/build.ts",
+    "start": "npm run build && electron dist/main/index.js",
+    "dev": "tsc -w",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "pack": "npm run build && electron-builder --dir",
+    "dist": "npm run build && electron-builder",
+    "dist:mac": "npm run build && electron-builder --mac",
+    "dist:win": "npm run build && electron-builder --win",
+    "dist:all": "npm run build && electron-builder --mac --win",
+    "generate-assets": "npx tsx scripts/generate-assets.ts && npx tsx scripts/generate-icons.ts && npx tsx scripts/create-ico.ts"
+  },
+  "keywords": [
+    "voice",
+    "cli",
+    "speech-to-text",
+    "dictation",
+    "llm"
+  ],
+  "dependencies": {
+    "@ffmpeg-installer/ffmpeg": "^1.1.0",
+    "@napi-rs/clipboard": "^1.1.3",
+    "@xitanggg/node-insert-text": "^1.5.1",
+    "dotenv": "^17.3.1",
+    "groq-sdk": "^0.37.0"
+  },
+  "optionalDependencies": {
+    "@ffmpeg-installer/darwin-arm64": "^4.1.5",
+    "@ffmpeg-installer/win32-x64": "^4.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^25.2.3",
+    "electron": "^40.4.1",
+    "electron-builder": "^26.7.0",
+    "sharp": "^0.34.5",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.18"
+  },
+  "build": {
+    "appId": "com.typefree.app",
+    "productName": "Typefree",
+    "copyright": "Copyright © 2024 Typefree",
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "files": [
+      "dist/**/*",
+      "node_modules/**/*",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "bin/win32-x64",
+        "to": "ffmpeg/win32-x64",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
+        "from": "node_modules/@ffmpeg-installer/darwin-arm64",
+        "to": "ffmpeg/darwin-arm64",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
+        "from": "dist/assets/sounds",
+        "to": "assets/sounds",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
+    "mac": {
+      "category": "public.app-category.productivity",
+      "icon": "build/icon.icns",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "arm64"
+          ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "arm64"
+          ]
+        }
+      ],
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.plist",
+      "extendInfo": {
+        "LSUIElement": true,
+        "NSMicrophoneUsageDescription": "Typefree needs access to your microphone for voice input.",
+        "NSAppleEventsUsageDescription": "Typefree needs to send keystrokes to the active application."
+      }
+    },
+    "dmg": {
+      "contents": [
+        {
+          "x": 130,
+          "y": 220
+        },
+        {
+          "x": 410,
+          "y": 220,
+          "type": "link",
+          "path": "/Applications"
+        }
+      ]
+    },
+    "win": {
+      "icon": "build/icon.ico",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico",
+      "installerHeaderIcon": "build/icon.ico",
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Typefree"
+    }
+  }
+}

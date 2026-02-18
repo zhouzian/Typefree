@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Typefree Settings</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+    <h1>Typefree Settings</h1>
+    
+    <div id="apiKeyRequired" class="api-key-banner" style="display: none;">
+      <div class="banner-icon">🔑</div>
+      <div class="banner-text">
+        <strong>API Key Required</strong>
+        <p>Enter your Groq API key to start using Typefree.</p>
+        <a href="#" id="getApiKeyLink">Get a free API key at console.groq.com →</a>
+      </div>
+    </div>
+    
+    <section class="settings-section">
+      <h2>API Key</h2>
+      <div class="setting-row">
+        <label for="apiKey">Groq API Key</label>
+        <div class="input-group">
+          <input type="password" id="apiKey" placeholder="gsk_..." />
+          <button id="toggleApiKey" class="btn-icon" title="Show/Hide">👁</button>
+        </div>
+      </div>
+      <div class="setting-row">
+        <div class="button-group">
+          <button id="testApiKey" class="btn-secondary">Test API Key</button>
+          <span id="apiKeyStatus" class="status-message"></span>
+        </div>
+      </div>
+    </section>
+    
+    <section class="settings-section">
+      <h2>Hotkey</h2>
+      <div class="setting-row">
+        <label for="hotkey">Push-to-talk Key</label>
+        <div class="input-group">
+          <input type="text" id="hotkey" readonly placeholder="Press a key..." />
+          <button id="recordHotkey" class="btn-secondary">Record</button>
+        </div>
+        <span class="hint">Hold one modifier + one key (e.g., Option+Z on Mac, Alt+Z on Windows)</span>
+        <span id="hotkeyStatus" class="hint"></span>
+      </div>
+    </section>
+    
+    <section class="settings-section">
+      <h2>Audio</h2>
+      <div class="setting-row">
+        <label for="microphone">Microphone</label>
+        <select id="microphone">
+          <option value="">System Default</option>
+        </select>
+      </div>
+      <div class="setting-row">
+        <label>Microphone Level</label>
+        <div class="level-meter">
+          <div id="micLevel" class="level-bar"></div>
+        </div>
+      </div>
+    </section>
+    
+    <section class="settings-section">
+      <h2>Language</h2>
+      <div class="setting-row">
+        <label for="language">Transcription Language</label>
+        <select id="language">
+          <option value="auto">Auto-detect</option>
+          <option value="en">English</option>
+          <option value="es">Spanish</option>
+          <option value="fr">French</option>
+          <option value="de">German</option>
+          <option value="zh">Chinese</option>
+          <option value="ja">Japanese</option>
+          <option value="ko">Korean</option>
+          <option value="pt">Portuguese</option>
+          <option value="it">Italian</option>
+          <option value="ru">Russian</option>
+          <option value="ar">Arabic</option>
+          <option value="hi">Hindi</option>
+          <option value="nl">Dutch</option>
+          <option value="pl">Polish</option>
+          <option value="sv">Swedish</option>
+          <option value="tr">Turkish</option>
+          <option value="vi">Vietnamese</option>
+        </select>
+        <span class="hint">Specifying language can improve accuracy</span>
+      </div>
+    </section>
+    
+    <section class="settings-section">
+      <h2>Text Reorganization</h2>
+      <div class="setting-row">
+        <label for="llmEnabled">Enable LLM Rewrite</label>
+        <label class="toggle">
+          <input type="checkbox" id="llmEnabled" />
+          <span class="toggle-slider"></span>
+        </label>
+        <span class="hint">Transform raw speech into formatted text</span>
+      </div>
+      <div class="setting-row" id="presetRow">
+        <label for="llmPreset">Rewrite Preset</label>
+        <select id="llmPreset">
+          <option value="none">None - Raw transcript only</option>
+          <option value="general">General - Clean up filler words</option>
+          <option value="email">Email - Professional email format</option>
+          <option value="technical">Technical - Concise CLI prompts</option>
+        </select>
+        <span id="presetDescription" class="hint"></span>
+      </div>
+    </section>
+    
+    <section class="settings-section">
+      <h2>Overlay</h2>
+      <div class="setting-row">
+        <label for="overlayPosition">Position</label>
+        <select id="overlayPosition">
+          <option value="bottom-center">Bottom Center</option>
+          <option value="top-center">Top Center</option>
+          <option value="bottom-left">Bottom Left</option>
+          <option value="bottom-right">Bottom Right</option>
+          <option value="top-left">Top Left</option>
+          <option value="top-right">Top Right</option>
+        </select>
+      </div>
+      <div class="setting-row">
+        <label for="overlayWidth">Width</label>
+        <div class="slider-group">
+          <input type="range" id="overlayWidth" min="400" max="800" value="600" step="50" />
+          <span id="overlayWidthValue">600px</span>
+        </div>
+      </div>
+    </section>
+    
+    <section class="settings-section">
+      <h2>Feedback</h2>
+      <div class="setting-row">
+        <label for="soundOnRecord">Play Sounds</label>
+        <label class="toggle">
+          <input type="checkbox" id="soundOnRecord" />
+          <span class="toggle-slider"></span>
+        </label>
+        <span class="hint">Play sound when recording starts/ends</span>
+      </div>
+    </section>
+    
+    <div class="button-bar">
+      <button id="cancelBtn" class="btn-secondary">Cancel</button>
+      <button id="saveBtn" class="btn-primary">Save</button>
+    </div>
+  </div>
+  <script src="index.js"></script>
+</body>
+</html>

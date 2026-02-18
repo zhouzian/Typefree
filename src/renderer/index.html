@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Typefree</title>
+  <link rel="stylesheet" href="styles.css">
+  <script>
+    window.onerror = function(msg, url, line) {
+      console.error('Error: ' + msg + ' at ' + url + ':' + line);
+      return false;
+    };
+  </script>
+</head>
+<body>
+  <div id="app">
+    <div id="overlay">
+      <div id="visualizer-container">
+        <div id="pulse-core">
+          <div class="core-inner"></div>
+        </div>
+        <div id="ripple-container">
+          <div class="ripple"></div>
+          <div class="ripple"></div>
+          <div class="ripple"></div>
+        </div>
+        <div id="particles">
+          <div class="particle"></div>
+          <div class="particle"></div>
+          <div class="particle"></div>
+          <div class="particle"></div>
+          <div class="particle"></div>
+          <div class="particle"></div>
+        </div>
+      </div>
+      <div id="content">
+        <div id="text"></div>
+        <div id="status"></div>
+      </div>
+    </div>
+  </div>
+  <script src="index.js"></script>
+</body>
+</html>
