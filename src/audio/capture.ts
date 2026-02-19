@@ -12,10 +12,10 @@ const MIN_TIME_BETWEEN_TRANSCRIPTS = 2000;
 const MIN_SPEECH_CHUNKS = 10;
 const NOISE_FLOOR_MARGIN = 3.0;
 const NOISE_HISTORY_SIZE = 100;
-const MIN_SPEECH_THRESHOLD = 0.005;
-const MIN_SILENCE_THRESHOLD = 0.003;
+const MIN_SPEECH_THRESHOLD = 0.015;
+const MIN_SILENCE_THRESHOLD = 0.008;
 const STARTUP_CALIBRATION_SECONDS = 6;
-const NOISE_PERCENTILE = 25;
+const NOISE_PERCENTILE = 50;
 
 interface STTService {
   transcribe(audioBuffer: Buffer): Promise<string>;
@@ -243,25 +243,25 @@ export class AudioCapture {
     const levels = [...this.calibrationLevels];
     levels.sort((a, b) => a - b);
     
-    const percentileIndex = Math.floor(levels.length * (NOISE_PERCENTILE / 100));
-    const noiseFloor = levels[percentileIndex];
+    const medianIndex = Math.floor(levels.length / 2);
+    const median = levels[medianIndex];
     
     const quietLevels = levels.slice(0, Math.floor(levels.length * 0.5));
     let sumSquaredDiff = 0;
     for (const l of quietLevels) {
-      sumSquaredDiff += (l - noiseFloor) * (l - noiseFloor);
+      sumSquaredDiff += (l - median) * (l - median);
     }
     const stdDev = Math.sqrt(sumSquaredDiff / quietLevels.length);
     
-    this.noiseFloor = noiseFloor;
+    this.noiseFloor = median;
     
-    const adaptiveSpeechThreshold = noiseFloor + NOISE_FLOOR_MARGIN * stdDev;
-    const adaptiveSilenceThreshold = noiseFloor + stdDev;
+    const adaptiveSpeechThreshold = median + NOISE_FLOOR_MARGIN * stdDev;
+    const adaptiveSilenceThreshold = median + stdDev;
     
     this.speechThreshold = Math.max(adaptiveSpeechThreshold, MIN_SPEECH_THRESHOLD);
     this.silenceThreshold = Math.max(adaptiveSilenceThreshold, MIN_SILENCE_THRESHOLD);
     
-    log(`[Audio] Calibration complete: noiseFloor=${this.noiseFloor.toFixed(4)} stdDev=${stdDev.toFixed(4)} speechThreshold=${this.speechThreshold.toFixed(4)} silenceThreshold=${this.silenceThreshold.toFixed(4)}`);
+    log(`[Audio] Calibration complete: median=${median.toFixed(4)} stdDev=${stdDev.toFixed(4)} speechThreshold=${this.speechThreshold.toFixed(4)} silenceThreshold=${this.silenceThreshold.toFixed(4)}`);
     
     if (this.onCalibrationComplete) {
       this.onCalibrationComplete({
@@ -408,9 +408,9 @@ export class AudioCapture {
     this.totalSpeechChunks = 0;
     
     this.noiseHistory = [];
-    this.noiseFloor = 0.001;
-    this.speechThreshold = 0.005;
-    this.silenceThreshold = 0.002;
+    this.noiseFloor = 0.01;
+    this.speechThreshold = 0.03;
+    this.silenceThreshold = 0.015;
     this.lastLevel = 0;
 
     if (this.deviceId === undefined) {

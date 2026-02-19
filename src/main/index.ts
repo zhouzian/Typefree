@@ -253,6 +253,7 @@ function stopRecordingRequested() {
   
   if (gracePeriodTimeout) {
     clearTimeout(gracePeriodTimeout);
+    log('[Main] Cleared existing grace period timer due to new speech');
   }
   
   const isMac = process.platform === 'darwin';
@@ -270,7 +271,7 @@ function stopRecordingRequested() {
     }
   }, GRACE_PERIOD_MS);
 }
-
+  
 async function processRecording() {
   log(`[Main] processRecording called, isRecording=${isRecording} isProcessing=${isProcessing}`);
   if (!isRecording || isProcessing) return;
