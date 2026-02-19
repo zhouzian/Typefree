@@ -115,10 +115,9 @@ A cross-platform voice input tool for CLI applications like Kilo CLI and Claude 
 
 | Preset | Description | Use Case |
 |--------|-------------|----------|
-| **None** | No reorganization, output raw transcript | When you want exact words preserved |
-| **General** | Clean up filler words, fix grammar, basic structure | Everyday use, notes, chat |
-| **Email** | Format as professional email with greeting/sign-off | Email composition |
-| **Technical** | Concise, direct language for technical prompts | Coding agents, CLI tools, technical docs |
+| **General** | Remove filler words, fix grammar (minimal changes) | Everyday use, notes, chat |
+| **Email** | Professional tone, suitable for email communication | Email composition |
+| **Technical** | Clean text for technical prompts | Coding agents, CLI tools, technical docs |
 
 ### 6. Text Output (`src/output/`)
 
@@ -316,7 +315,7 @@ typefree/
 - [x] Configuration system
 - [x] System tray integration
 - [x] Settings window with all options
-- [x] LLM preset system (None, General, Email, Technical)
+- [x] LLM preset system (General, Email, Technical)
 - [x] App packaging (macOS .app, Windows .exe)
 - [x] Cross-platform build scripts
 - [x] Linux support

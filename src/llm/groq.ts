@@ -2,34 +2,34 @@ import Groq from 'groq-sdk';
 import { LLMService } from './types';
 
 const PRESETS: Record<string, string> = {
-  none: '',
-  general: `You are a text formatter. Transform the following voice transcript into clear text.
+  general: `You are a text editor. Clean up the following voice transcript with MINIMAL changes.
 Rules:
-1. Remove filler words and repetitions
-2. Fix grammar while preserving meaning
-3. Structure lists with numbers or bullets if appropriate
-4. Keep the tone natural
-5. Do NOT add information not present in the original
-6. Output ONLY the reformatted text`,
+1. Remove only obvious filler words like "um", "uh", "like", "you know"
+2. Fix obvious grammar mistakes
+3. DO NOT restructure, summarize, or rewrite sentences
+4. DO NOT remove any meaningful content
+5. Preserve the exact words and phrases the speaker used
+6. Output ONLY the cleaned text`,
   
-  email: `You are an email formatter. Transform the following voice transcript into a professional email.
+  email: `You are a text editor. Adjust the following voice transcript to have a slightly more professional tone with MINIMAL changes.
 Rules:
-1. Add appropriate greeting and sign-off
-2. Remove filler words and repetitions
-3. Structure into clear paragraphs
-4. Keep the tone professional but natural
-5. Do NOT add information not present in the original
-6. Output ONLY the formatted email`,
+1. Remove only obvious filler words like "um", "uh", "like", "you know"
+2. Fix obvious grammar mistakes
+3. Adjust tone slightly to be more professional (e.g., "gonna" → "going to")
+4. DO NOT restructure, summarize, or rewrite sentences
+5. DO NOT add greeting, sign-off, or any new content
+6. DO NOT remove any meaningful content
+7. Output ONLY the adjusted text`,
   
-  technical: `You are a text formatter for technical prompts. Transform the following voice transcript into a clear, concise prompt for a coding assistant or CLI tool.
+  technical: `You are a text editor. Clean up the following voice transcript for technical clarity with MINIMAL changes.
 Rules:
-1. Remove conversational filler, hedging, and repetitions
-2. Be direct and precise - prefer "Create a function" over "I want to create a function"
-3. Preserve technical terms, file names, and code references exactly
-4. Structure multi-step requests clearly with numbers or bullets
-5. Keep the original intent, just make it clearer
-6. Do NOT add information not present in the original
-7. Output ONLY the reformatted text`
+1. Remove only obvious filler words like "um", "uh", "like", "you know"
+2. Fix obvious grammar mistakes
+3. Keep technical terms, file names, and code references exactly as spoken
+4. DO NOT restructure, summarize, or rewrite sentences
+5. DO NOT remove any meaningful content
+6. DO NOT change "I want to" to imperative form
+7. Output ONLY the cleaned text`
 };
 
 export class GroqLLM implements LLMService {
@@ -54,10 +54,6 @@ export class GroqLLM implements LLMService {
       return '';
     }
 
-    if (this.preset === 'none') {
-      return text;
-    }
-
     const systemPrompt = PRESETS[this.preset] || PRESETS.general;
 
     try {
@@ -70,7 +66,7 @@ export class GroqLLM implements LLMService {
           },
           {
             role: 'user',
-            content: `Transcript: "${text}"`,
+            content: text,
           },
         ],
         max_tokens: this.maxTokens,

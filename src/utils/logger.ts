@@ -19,6 +19,12 @@ export function initLogger(): void {
   if (!fs.existsSync(logDir)) {
     fs.mkdirSync(logDir, { recursive: true });
   }
+  
+  try {
+    fs.writeFileSync(logPath, '');
+  } catch {
+    // Silently fail if log can't be cleared
+  }
 }
 
 export function log(message: string): void {

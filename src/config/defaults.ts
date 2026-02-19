@@ -20,7 +20,7 @@ export interface AppConfig {
     provider?: string;
     model?: string;
     enabled?: boolean;
-    preset?: 'none' | 'general' | 'email' | 'technical';
+    preset?: 'general' | 'email' | 'technical';
   };
   overlay?: {
     position?: string;

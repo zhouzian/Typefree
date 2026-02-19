@@ -265,9 +265,13 @@ function stopRecordingRequested() {
   });
   
   gracePeriodTimeout = setTimeout(() => {
-    log(`[Main] Grace period ended, isRecording=${isRecording} isProcessing=${isProcessing}`);
-    if (isRecording && !isProcessing) {
+    const isSpeaking = audioCapture?.isCurrentlySpeaking() || false;
+    log(`[Main] Grace period ended, isRecording=${isRecording} isProcessing=${isProcessing} isSpeaking=${isSpeaking}`);
+    if (isRecording && !isProcessing && !isSpeaking) {
       processRecording();
+    } else if (isRecording && !isProcessing && isSpeaking) {
+      log('[Main] User is still speaking, resetting grace period');
+      stopRecordingRequested();
     }
   }, GRACE_PERIOD_MS);
 }
@@ -306,12 +310,23 @@ async function processRecording() {
     
     if (finalAudio && finalAudio.length > 0 && sttService) {
       sendToOverlay('transcribing', { message: 'Transcribing...' });
+      
+      if (audioCapture) {
+        audioCapture.forceTranscribeRemainingSpeech();
+        log('[Main] Force transcribed remaining speech');
+      }
+      
+      if (audioCapture) {
+        await audioCapture.waitForPendingTranscription();
+        log('[Main] Waiting for pending VAD transcription complete');
+      }
+      
       try {
         log('[Main] Starting final transcription...');
         const finalTranscript = await sttService.transcribe(finalAudio);
         log(`[Main] Final transcript: "${finalTranscript}"`);
         if (finalTranscript.trim()) {
-          transcriptionBuffer.push(finalTranscript);
+          transcriptionBuffer = [finalTranscript];
         }
       } catch (err) {
         log(`[Main] Final transcription error: ${err}`);
@@ -319,6 +334,7 @@ async function processRecording() {
     }
     
     const completeTranscript = transcriptionBuffer.join(' ').trim();
+    
     log(`[Main] Complete transcript: "${completeTranscript}"`);
     
     if (!completeTranscript) {
@@ -363,8 +379,9 @@ async function processRecording() {
 }
 
 function handleTranscriptChunk(transcript: string) {
-  log(`[Main] handleTranscriptChunk: "${transcript}" isRecording=${isRecording}`);
-  if (!isRecording) return;
+  log(`[Main] handleTranscriptChunk: "${transcript}" isRecording=${isRecording} isProcessing=${isProcessing}`);
+  if (!isRecording && !isProcessing) return;
+  
   if (transcript.trim()) {
     transcriptionBuffer.push(transcript);
     const fullText = transcriptionBuffer.join(' ');
@@ -502,6 +519,8 @@ async function initialize() {
     onAudioLevel: handleAudioLevel,
     onSpeechEnd: stopRecordingRequested,
   });
+  
+  audioCapture.setSpeechStartHandler(stopRecordingRequested);
   
   const isMac = process.platform === 'darwin';
   const defaultHotkey = isMac ? 'Option+Z' : 'Alt+Z';
@@ -740,7 +759,15 @@ ipcMain.on('update-audio-device', async (_event, deviceId: number | null) => {
     sampleRate: 16000,
     deviceId: resolvedDeviceId ?? undefined,
     onAudioLevel: handleAudioLevel,
+    onSpeechEnd: stopRecordingRequested,
   });
+  
+  if (sttService) {
+    audioCapture.setSTTService(sttService);
+  }
+  audioCapture.setTranscriptHandler(handleTranscriptChunk);
+  audioCapture.setSpeechStartHandler(stopRecordingRequested);
+  audioCapture.setCalibrationHandlers(handleCalibrationProgress, handleCalibrationComplete);
   
   startMicLevelPolling();
 });

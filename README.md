@@ -67,10 +67,9 @@ Click the tray icon and select "Settings..." to:
 
 | Preset | Description |
 |--------|-------------|
-| **None** | Output raw transcript without modifications |
-| **General** | Clean up filler words, fix grammar |
-| **Email** | Format as professional email |
-| **Technical** | Concise prompts for coding agents |
+| **General** | Remove filler words, fix grammar (minimal changes) |
+| **Email** | Professional tone, suitable for email communication |
+| **Technical** | Clean text for technical prompts |
 
 ### How Recording Works
 
@@ -80,6 +79,8 @@ Click the tray icon and select "Settings..." to:
    - After ~1 second of silence → Speech end detected
 3. **Grace period** (3 seconds) → Speak again to continue recording
 4. **Auto-paste** → Final text inserted at cursor
+
+**Note:** Maximum recording duration is 5 minutes (300 seconds).
 
 ### Multiple Recordings
 
@@ -143,6 +144,8 @@ Files stored:
 
 ### macOS (Apple Silicon)
 - **Microphone**: System will prompt on first use
+- **Accessibility**: Required for auto-paste functionality. Grant permission when prompted.
+  - **After reinstall/upgrade**: You must remove the old Typefree from System Settings > Privacy & Security > Accessibility, then add the new version back. Otherwise, text will not be pasted to the target application.
 
 ### Windows
 - **Microphone**: System will prompt on first use

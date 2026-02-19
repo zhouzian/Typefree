@@ -93,11 +93,10 @@ function getLastSentences(text: string, maxSentences: number): string {
   return sentences.slice(-maxSentences).join(' ').trim();
 }
 
-ipcRenderer.on('grace-period', (_event: unknown, data: { message: string }) => {
-  log(`grace-period: "${data.message}"`);
-  statusEl.textContent = data.message;
-  statusEl.classList.add('grace');
-  overlayEl.classList.remove('listening');
+ipcRenderer.on('grace-period', (_event: unknown, _data: { message: string }) => {
+  log(`grace-period: silent mode - continuing recording`);
+  overlayEl.classList.remove('recording');
+  overlayEl.classList.add('listening');
   updatePulseCore(0);
 });
 

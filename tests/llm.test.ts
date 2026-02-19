@@ -58,12 +58,6 @@ describe('GroqLLM', () => {
       expect(llm).toBeDefined();
     });
 
-    it('should change preset to none', () => {
-      const llm = new GroqLLM('test-api-key');
-      llm.setPreset('none');
-      expect(llm).toBeDefined();
-    });
-
     it('should handle unknown preset gracefully', () => {
       const llm = new GroqLLM('test-api-key');
       llm.setPreset('unknown-preset');
@@ -74,7 +68,7 @@ describe('GroqLLM', () => {
       const llm = new GroqLLM('test-api-key');
       llm.setPreset('email');
       llm.setPreset('technical');
-      llm.setPreset('none');
+      llm.setPreset('general');
       expect(llm).toBeDefined();
     });
   });
@@ -92,51 +86,32 @@ describe('GroqLLM', () => {
       expect(result).toBe('');
     });
 
-    it('should return original text for none preset', async () => {
-      const llm = new GroqLLM('test-api-key', undefined, undefined, 'none');
-      const text = 'This is some test text';
-      const result = await llm.reorganize(text);
-      expect(result).toBe(text);
-    });
-
-    it('should return original text for none preset set via setPreset', async () => {
-      const llm = new GroqLLM('test-api-key');
-      llm.setPreset('none');
-      const text = 'This is some test text';
-      const result = await llm.reorganize(text);
-      expect(result).toBe(text);
-    });
-
     it('should handle text with newlines', async () => {
       const llm = new GroqLLM('test-api-key');
-      llm.setPreset('none');
       const text = 'Line one\nLine two\nLine three';
       const result = await llm.reorganize(text);
-      expect(result).toBe(text);
+      expect(result).toBeDefined();
     });
 
     it('should handle text with special characters', async () => {
       const llm = new GroqLLM('test-api-key');
-      llm.setPreset('none');
       const text = 'Special chars: @#$%^&*()';
       const result = await llm.reorganize(text);
-      expect(result).toBe(text);
+      expect(result).toBeDefined();
     });
 
     it('should handle text with unicode characters', async () => {
       const llm = new GroqLLM('test-api-key');
-      llm.setPreset('none');
       const text = 'Unicode: 你好世界 🌍 مرحبا';
       const result = await llm.reorganize(text);
-      expect(result).toBe(text);
+      expect(result).toBeDefined();
     });
 
-    it('should handle very long text for none preset', async () => {
+    it('should handle very long text', async () => {
       const llm = new GroqLLM('test-api-key');
-      llm.setPreset('none');
       const text = 'a'.repeat(10000);
       const result = await llm.reorganize(text);
-      expect(result).toBe(text);
+      expect(result).toBeDefined();
     });
 
     it('should handle text with only spaces', async () => {

@@ -4,10 +4,9 @@ let currentConfig: any = {};
 let isRecordingHotkey = false;
 
 const PRESET_DESCRIPTIONS: Record<string, string> = {
-  none: 'Output raw transcript without any modifications',
-  general: 'Clean up filler words, fix grammar, basic structure',
-  email: 'Format as professional email with greeting and sign-off',
-  technical: 'Concise, direct language for coding agents and CLI tools'
+  general: 'Remove filler words, fix grammar (minimal changes)',
+  email: 'Professional tone, suitable for email communication',
+  technical: 'Clean text for technical prompts'
 };
 
 function $(id: string): HTMLElement {
@@ -65,7 +64,11 @@ function populateFields() {
   
   const llmPresetSelect = document.getElementById('llmPreset') as HTMLSelectElement;
   llmPresetSelect.value = currentConfig.llm?.preset || 'general';
+  llmPresetSelect.disabled = !llmEnabledCheck.checked;
   updatePresetDescription(llmPresetSelect.value);
+  
+  const presetRow = $('presetRow');
+  presetRow.style.opacity = llmEnabledCheck.checked ? '1' : '0.5';
   
   const positionSelect = document.getElementById('overlayPosition') as HTMLSelectElement;
   positionSelect.value = currentConfig.overlay?.position || 'bottom-center';
@@ -185,11 +188,13 @@ function setupEventListeners() {
 
   const llmEnabledCheck = document.getElementById('llmEnabled') as HTMLInputElement;
   const presetRow = $('presetRow');
+  const llmPresetSelect = document.getElementById('llmPreset') as HTMLSelectElement;
+  
   llmEnabledCheck.addEventListener('change', () => {
+    llmPresetSelect.disabled = !llmEnabledCheck.checked;
     presetRow.style.opacity = llmEnabledCheck.checked ? '1' : '0.5';
   });
   
-  const llmPresetSelect = document.getElementById('llmPreset') as HTMLSelectElement;
   llmPresetSelect.addEventListener('change', () => {
     updatePresetDescription(llmPresetSelect.value);
   });

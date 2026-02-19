@@ -30,7 +30,7 @@ describe('ConfigManager', () => {
 
   describe('DEFAULT_CONFIG', () => {
     it('should have default hotkey', () => {
-      expect(DEFAULT_CONFIG.hotkey?.key).toBe('RIGHT_ALT');
+      expect(DEFAULT_CONFIG.hotkey?.key).toBe('');
     });
 
     it('should have default audio settings', () => {
@@ -64,7 +64,7 @@ describe('ConfigManager', () => {
 
     it('should have default VAD settings', () => {
       expect(DEFAULT_CONFIG.audio?.vad?.type).toBe('webrtc');
-      expect(DEFAULT_CONFIG.audio?.vad?.silenceDurationMs).toBe(1000);
+      expect(DEFAULT_CONFIG.audio?.vad?.silenceDurationMs).toBe(2000);
     });
 
     it('should have default audio deviceId as null', () => {
@@ -86,7 +86,7 @@ describe('ConfigManager', () => {
       const manager = new ConfigManager();
       const config = await manager.load();
       expect(config).toBeDefined();
-      expect(config.hotkey?.key).toBe('RIGHT_ALT');
+      expect(config.hotkey?.key).toBe('');
     });
 
     it('should return config from getConfig', async () => {
@@ -167,7 +167,7 @@ describe('ConfigManager', () => {
     it('should load default config when no file exists', async () => {
       const manager = new ConfigManager();
       const config = await manager.load();
-      expect(config.hotkey?.key).toBe('RIGHT_ALT');
+      expect(config.hotkey?.key).toBe('');
       expect(config.audio?.sampleRate).toBe(16000);
     });
   });

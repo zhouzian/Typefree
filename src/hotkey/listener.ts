@@ -1,4 +1,11 @@
-import { globalShortcut } from 'electron';
+const getGlobalShortcut = () => {
+  try {
+    return require('electron').globalShortcut;
+  } catch {
+    return null;
+  }
+};
+
 import { log } from '../utils/logger';
 
 export interface HotkeyOptions {
@@ -35,6 +42,12 @@ export class HotkeyManager {
   start(): boolean {
     if (this.isRunning) {
       this.stop();
+    }
+
+    const globalShortcut = getGlobalShortcut();
+    if (!globalShortcut) {
+      log('[Hotkey] globalShortcut not available (not in Electron context)');
+      return false;
     }
 
     try {
@@ -117,10 +130,13 @@ export class HotkeyManager {
   }
 
   stop(): void {
-    try {
-      globalShortcut.unregisterAll();
-    } catch (error) {
-      console.error('Failed to stop hotkey listener:', error);
+    const globalShortcut = getGlobalShortcut();
+    if (globalShortcut) {
+      try {
+        globalShortcut.unregisterAll();
+      } catch (error) {
+        console.error('Failed to stop hotkey listener:', error);
+      }
     }
     
     if (this.releaseCheckInterval) {

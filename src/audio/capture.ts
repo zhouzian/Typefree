@@ -5,10 +5,10 @@ import * as path from 'path';
 import { log } from '../utils/logger';
 
 const MIN_AUDIO_SIZE = 3200;
-const MAX_BUFFER_SIZE = 16000 * 2 * 10;
+const MAX_BUFFER_SIZE = 16000 * 2 * 300;
 const MIN_CALIBRATION_SAMPLES = 30;
 const SILENCE_CHUNKS_NEEDED = 10;
-const MIN_TIME_BETWEEN_TRANSCRIPTS = 2000;
+const MIN_TIME_BETWEEN_TRANSCRIPTS = 1500;
 const MIN_SPEECH_CHUNKS = 10;
 const NOISE_FLOOR_MARGIN = 3.0;
 const NOISE_HISTORY_SIZE = 100;
@@ -97,6 +97,7 @@ export class AudioCapture {
   private onCalibrationProgress?: (progress: { remaining: number; isQuiet: boolean }) => void;
   private onCalibrationComplete?: (result: { noiseFloor: number; speechThreshold: number }) => void;
   private onSpeechEnd?: () => void;
+  private onSpeechStart?: () => void;
   
   private levelPollingProcess: ChildProcess | null = null;
 
@@ -106,6 +107,7 @@ export class AudioCapture {
     this.channels = options.channels || 1;
     this.onTranscript = options.onTranscript;
     this.onAudioLevel = options.onAudioLevel;
+    this.onSpeechStart = options.onSpeechStart;
     this.onSpeechEnd = options.onSpeechEnd;
     this.sttService = options.sttService;
     this.onCalibrationProgress = options.onCalibrationProgress;
@@ -120,12 +122,68 @@ export class AudioCapture {
     this.onTranscript = handler;
   }
 
+  setSpeechStartHandler(handler: () => void): void {
+    this.onSpeechStart = handler;
+  }
+
   setCalibrationHandlers(
     onProgress: (progress: { remaining: number; isQuiet: boolean }) => void,
     onComplete: (result: { noiseFloor: number; speechThreshold: number }) => void
   ): void {
     this.onCalibrationProgress = onProgress;
     this.onCalibrationComplete = onComplete;
+  }
+
+  async waitForPendingTranscription(): Promise<void> {
+    while (this.isProcessingTranscript) {
+      await new Promise(resolve => setTimeout(resolve, 50));
+    }
+  }
+
+  isProcessingVadTranscript(): boolean {
+    return this.isProcessingTranscript;
+  }
+
+  forceTranscribeRemainingSpeech(): void {
+    if (this.speechBuffer.length > 0) {
+      log(`[Audio] Force transcribing remaining speech buffer (${this.speechBuffer.length} chunks)`);
+      this.triggerVadTranscription(true);
+    }
+  }
+
+  triggerFinalVadTranscription(): void {
+    if (!this.sttService || this.isProcessingTranscript) {
+      return;
+    }
+    
+    if (this.audioBuffer.length === 0) {
+      return;
+    }
+    
+    const audioData = Buffer.concat(this.audioBuffer);
+    
+    if (audioData.length < MIN_AUDIO_SIZE) {
+      log(`[Audio] Final VAD audio too small: ${audioData.length} bytes`);
+      return;
+    }
+    
+    log('[Audio] Starting final VAD transcription from full buffer...');
+    this.isProcessingTranscript = true;
+    const wavBuffer = this.createWavBuffer(audioData);
+    
+    (async () => {
+      try {
+        const transcript = await this.sttService!.transcribe(wavBuffer);
+        log(`[Audio] Final VAD transcript: "${transcript}"`);
+        if (transcript && this.onTranscript) {
+          this.onTranscript(transcript);
+        }
+      } catch (error) {
+        log(`[Audio] Final VAD transcription error: ${error}`);
+      } finally {
+        this.isProcessingTranscript = false;
+      }
+    })();
   }
 
   async runStartupCalibration(): Promise<{ noiseFloor: number; speechThreshold: number }> {
@@ -504,6 +562,7 @@ export class AudioCapture {
         this.silenceChunkCount = 0;
         this.speechChunkCount = 0;
         this.speechBuffer = [...this.audioBuffer.slice(-10)];
+        this.onSpeechStart?.();
       }
     } else {
       this.speechBuffer.push(chunk);
@@ -555,17 +614,21 @@ export class AudioCapture {
     this.silenceThreshold = Math.max(adaptiveSilenceThreshold, MIN_SILENCE_THRESHOLD);
   }
 
-  private triggerVadTranscription(): void {
+  triggerVadTranscription(force: boolean = false): void {
     const now = Date.now();
-    if (now - this.lastTranscriptTime < MIN_TIME_BETWEEN_TRANSCRIPTS) {
+    if (!force && now - this.lastTranscriptTime < MIN_TIME_BETWEEN_TRANSCRIPTS) {
       log('[Audio] Skipping VAD - too soon since last transcript');
       return;
     }
     
-    if (this.speechBuffer.length === 0 || !this.sttService || this.isProcessingTranscript) {
+    if (!this.sttService || this.isProcessingTranscript) {
       return;
     }
-
+    
+    if (this.speechBuffer.length === 0) {
+      return;
+    }
+    
     const audioData = Buffer.concat(this.speechBuffer);
     this.speechBuffer = [];
     
@@ -575,6 +638,7 @@ export class AudioCapture {
     }
     
     this.lastTranscriptTime = now;
+    
     this.isProcessingTranscript = true;
     const wavBuffer = this.createWavBuffer(audioData);
     
@@ -583,7 +647,7 @@ export class AudioCapture {
         log('[Audio] Starting VAD transcription...');
         const transcript = await this.sttService!.transcribe(wavBuffer);
         log(`[Audio] VAD transcript: "${transcript}"`);
-        if (transcript && this.onTranscript && this.isRecording) {
+        if (transcript && this.onTranscript) {
           this.onTranscript(transcript);
         }
       } catch (error) {
@@ -662,6 +726,10 @@ export class AudioCapture {
 
   getTotalSpeechChunks(): number {
     return this.totalSpeechChunks;
+  }
+
+  isCurrentlySpeaking(): boolean {
+    return this.isSpeaking;
   }
 
   getThresholds(): { noiseFloor: number; speechThreshold: number; silenceThreshold: number } {

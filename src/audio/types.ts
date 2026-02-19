@@ -10,6 +10,7 @@ export interface AudioCaptureOptions {
   channels?: number;
   onTranscript?: (transcript: string) => void;
   onAudioLevel?: (level: number) => void;
+  onSpeechStart?: () => void;
   onSpeechEnd?: () => void;
   sttService?: {
     transcribe(audioBuffer: Buffer): Promise<string>;
