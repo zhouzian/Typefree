@@ -33,6 +33,7 @@
     "@napi-rs/clipboard": "^1.1.3",
     "@xitanggg/node-insert-text": "^1.5.1",
     "dotenv": "^17.3.1",
+    "ffmpeg-device-list-parser": "^0.1.0",
     "groq-sdk": "^0.37.0"
   },
   "optionalDependencies": {
@@ -63,7 +64,7 @@
     ],
     "extraResources": [
       {
-        "from": "bin/win32-x64",
+        "from": "node_modules/@ffmpeg-installer/win32-x64",
         "to": "ffmpeg/win32-x64",
         "filter": [
           "**/*"
@@ -127,6 +128,7 @@
     },
     "win": {
       "icon": "build/icon.ico",
+      "signAndEditExecutable": false,
       "target": [
         {
           "target": "nsis",

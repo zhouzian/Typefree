@@ -7,6 +7,7 @@ export interface AudioDevice {
 export interface AudioCaptureOptions {
   sampleRate?: number;
   deviceId?: number;
+  deviceName?: string;
   channels?: number;
   onTranscript?: (transcript: string) => void;
   onAudioLevel?: (level: number) => void;

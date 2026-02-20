@@ -4,6 +4,7 @@ export interface AppConfig {
   };
   audio?: {
     deviceId?: number | null;
+    deviceName?: string;
     sampleRate?: number;
     channels?: number;
     vad?: {

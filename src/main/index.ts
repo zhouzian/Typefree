@@ -144,6 +144,7 @@ async function createSettingsWindow() {
     minimizable: false,
     maximizable: false,
     fullscreenable: false,
+    autoHideMenuBar: process.platform === 'win32',
     show: false,
     webPreferences: {
       nodeIntegration: true,
@@ -508,6 +509,13 @@ async function initialize() {
   const config = configManager.getConfig();
   
   let resolvedDeviceId = config.audio?.deviceId ?? undefined;
+  let resolvedDeviceName = config.audio?.deviceName ?? undefined;
+  
+  if (process.platform === 'win32' && !resolvedDeviceName) {
+    resolvedDeviceName = await AudioCapture.getDefaultDeviceName();
+    log(`[Main] Resolved Windows device name: ${resolvedDeviceName}`);
+  }
+  
   if (resolvedDeviceId === null || resolvedDeviceId === undefined) {
     resolvedDeviceId = await AudioCapture.getDefaultDeviceIndex();
     log(`[Main] Resolved default device to index: ${resolvedDeviceId}`);
@@ -516,6 +524,7 @@ async function initialize() {
   audioCapture = new AudioCapture({
     sampleRate: config.audio?.sampleRate || 16000,
     deviceId: resolvedDeviceId,
+    deviceName: resolvedDeviceName,
     onAudioLevel: handleAudioLevel,
     onSpeechEnd: stopRecordingRequested,
   });
@@ -750,6 +759,19 @@ ipcMain.on('update-audio-device', async (_event, deviceId: number | null) => {
   stopMicLevelPolling();
   
   let resolvedDeviceId = deviceId;
+  let resolvedDeviceName: string | undefined;
+  
+  if (process.platform === 'win32') {
+    const devices = await AudioCapture.getDevices();
+    if (deviceId !== null && devices[deviceId]) {
+      resolvedDeviceName = devices[deviceId].name;
+      log(`[Main] Windows device name: ${resolvedDeviceName}`);
+    } else if (deviceId === null) {
+      resolvedDeviceName = await AudioCapture.getDefaultDeviceName();
+      log(`[Main] Windows default device name: ${resolvedDeviceName}`);
+    }
+  }
+  
   if (deviceId === null) {
     resolvedDeviceId = await AudioCapture.getDefaultDeviceIndex();
     log(`[Main] Resolved system default to device index: ${resolvedDeviceId}`);
@@ -758,6 +780,7 @@ ipcMain.on('update-audio-device', async (_event, deviceId: number | null) => {
   audioCapture = new AudioCapture({
     sampleRate: 16000,
     deviceId: resolvedDeviceId ?? undefined,
+    deviceName: resolvedDeviceName,
     onAudioLevel: handleAudioLevel,
     onSpeechEnd: stopRecordingRequested,
   });

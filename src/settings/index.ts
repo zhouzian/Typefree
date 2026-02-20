@@ -154,12 +154,11 @@ function setupEventListeners() {
       const fullKey = await ipcRenderer.invoke('get-api-key-full');
       if (fullKey) {
         apiKeyInput.value = fullKey;
-        apiKeyInput.type = 'text';
       }
+      apiKeyInput.type = 'text';
       toggleApiKeyBtn.textContent = '🙈';
     } else {
       apiKeyInput.type = 'password';
-      apiKeyInput.value = '';
       toggleApiKeyBtn.textContent = '👁';
     }
   });

@@ -69,6 +69,7 @@ export function calculateAudioLevel(chunk: Buffer): number {
 export class AudioCapture {
   private sampleRate: number;
   private deviceId: number | undefined;
+  private deviceName: string | undefined;
   private channels: number;
   private isRecording: boolean = false;
   private audioBuffer: Buffer[] = [];
@@ -104,6 +105,7 @@ export class AudioCapture {
   constructor(options: AudioCaptureOptions = {}) {
     this.sampleRate = options.sampleRate || 16000;
     this.deviceId = options.deviceId;
+    this.deviceName = options.deviceName;
     this.channels = options.channels || 1;
     this.onTranscript = options.onTranscript;
     this.onAudioLevel = options.onAudioLevel;
@@ -237,9 +239,15 @@ export class AudioCapture {
         'pipe:1'
       ];
     } else if (osPlatform === 'win32') {
+      const device = this.deviceName;
+      if (!device) {
+        throw new Error('Windows device name not set. Call getDefaultDeviceIndex() first.');
+      }
+      log(`[Audio] Using Windows device for calibration: ${device}`);
       ffmpegArgs = [
         '-f', 'dshow',
-        '-i', 'audio=Default',
+        '-audio_buffer_size', '50',
+        '-i', `audio=${device}`,
         '-acodec', 'pcm_s16le',
         '-ar', String(this.sampleRate),
         '-ac', String(this.channels),
@@ -339,58 +347,22 @@ export class AudioCapture {
 
   static async getDevices(): Promise<AudioDevice[]> {
     const ffmpegPath = getFfmpegPath();
+    const { parse } = require('ffmpeg-device-list-parser');
     
-    return new Promise((resolve) => {
-      const platform = process.platform;
-
-      if (platform === 'darwin') {
-        exec(`"${ffmpegPath}" -f avfoundation -list_devices true -i "" 2>&1`, (_err: any, stdout: string, stderr: string) => {
-          const output = stdout + stderr;
-          const lines = output.split('\n');
-          const devices: AudioDevice[] = [];
-          let captureSection = false;
-
-          for (const line of lines) {
-            if (line.includes('AVFoundation audio devices')) {
-              captureSection = true;
-              continue;
-            }
-            if (captureSection && line.includes('[AVFoundation')) {
-              const match = line.match(/\[(\d+)\]\s+(.+)/);
-              if (match) {
-                devices.push({
-                  id: parseInt(match[1]),
-                  name: match[2].trim(),
-                });
-              }
-            }
-            if (captureSection && line.includes('video devices')) {
-              break;
-            }
-          }
-          resolve(devices.length > 0 ? devices : [{ id: 0, name: 'Default Microphone', isDefault: true }]);
-        });
-      } else if (platform === 'win32') {
-        exec(`"${ffmpegPath}" -f dshow -list_devices true -i "" 2>&1`, (_err: any, stdout: string, stderr: string) => {
-          const output = stdout + stderr;
-          const lines = output.split('\n');
-          const devices: AudioDevice[] = [];
-
-          for (const line of lines) {
-            const match = line.match(/\[dshow.*\]\s+"(.+)"\s+\(audio\)/);
-            if (match) {
-              devices.push({
-                id: devices.length,
-                name: match[1].trim(),
-              });
-            }
-          }
-          resolve(devices.length > 0 ? devices : [{ id: 0, name: 'Default Microphone', isDefault: true }]);
-        });
-      } else {
-        resolve([{ id: 0, name: 'Default Microphone', isDefault: true }]);
-      }
-    });
+    try {
+      const result = await parse({ ffmpegPath });
+      const devices: AudioDevice[] = result.audioDevices.map((device: any, index: number) => ({
+        id: device.id !== undefined ? device.id : index,
+        name: device.name,
+      }));
+      
+      log(`[Audio] Found ${devices.length} audio devices: ${devices.map(d => d.name).join(', ')}`);
+      
+      return devices.length > 0 ? devices : [{ id: 0, name: 'Default Microphone', isDefault: true }];
+    } catch (err) {
+      log(`[Audio] Failed to parse devices: ${err}`);
+      return [{ id: 0, name: 'Default Microphone', isDefault: true }];
+    }
   }
 
   static async getDefaultDeviceIndex(): Promise<number> {
@@ -444,11 +416,74 @@ export class AudioCapture {
     }
 
     if (platform === 'win32') {
-      log('[Audio] Windows: using default audio device');
-      return 0;
+      return new Promise((resolve) => {
+        exec('powershell -command "Get-AudioDevice -List | Where-Object {$_.Type -eq \'Recording\' -and $_.Default -eq $true} | Select-Object -ExpandProperty Name"', async (_err: any, stdout: string) => {
+          const defaultDeviceName = stdout.trim();
+          log(`[Audio] Windows default device name: "${defaultDeviceName}"`);
+          
+          if (defaultDeviceName) {
+            const devices = await AudioCapture.getDevices();
+            const deviceIndex = devices.findIndex(d => {
+              const deviceLower = d.name.toLowerCase();
+              const defaultLower = defaultDeviceName.toLowerCase();
+              return deviceLower.includes(defaultLower) || defaultLower.includes(deviceLower);
+            });
+            if (deviceIndex >= 0) {
+              log(`[Audio] Using device index ${deviceIndex}: "${devices[deviceIndex].name}"`);
+              resolve(deviceIndex);
+              return;
+            }
+          }
+          
+          log('[Audio] Windows: could not detect default device, using index 0');
+          resolve(0);
+        });
+      });
     }
 
     throw new Error(`Unsupported platform: ${platform}. Typefree supports macOS (Apple Silicon) and Windows 11.`);
+  }
+
+  static async getDefaultDeviceName(): Promise<string | undefined> {
+    const platform = process.platform;
+    
+    if (platform === 'darwin') {
+      return undefined;
+    }
+    
+    if (platform === 'win32') {
+      return new Promise((resolve) => {
+        exec('powershell -command "Get-AudioDevice -List | Where-Object {$_.Type -eq \'Recording\' -and $_.Default -eq $true} | Select-Object -ExpandProperty Name"', async (_err: any, stdout: string) => {
+          const defaultDeviceName = stdout.trim();
+          log(`[Audio] Windows default device name from PowerShell: "${defaultDeviceName}"`);
+          
+          if (defaultDeviceName) {
+            const devices = await AudioCapture.getDevices();
+            const matchedDevice = devices.find(d => {
+              const deviceLower = d.name.toLowerCase();
+              const defaultLower = defaultDeviceName.toLowerCase();
+              return deviceLower.includes(defaultLower) || defaultLower.includes(deviceLower);
+            });
+            if (matchedDevice) {
+              log(`[Audio] Matched device name: "${matchedDevice.name}"`);
+              resolve(matchedDevice.name);
+              return;
+            }
+          }
+          
+          const devices = await AudioCapture.getDevices();
+          if (devices.length > 0) {
+            log(`[Audio] Using first available device: "${devices[0].name}"`);
+            resolve(devices[0].name);
+            return;
+          }
+          
+          resolve(undefined);
+        });
+      });
+    }
+    
+    return undefined;
   }
 
   async startRecording(): Promise<void> {
@@ -495,9 +530,15 @@ export class AudioCapture {
         'pipe:1'
       ];
     } else if (osPlatform === 'win32') {
+      const device = this.deviceName;
+      if (!device) {
+        throw new Error('Windows device name not set. Call getDefaultDeviceIndex() first.');
+      }
+      log(`[Audio] Using Windows device: ${device}`);
       ffmpegArgs = [
         '-f', 'dshow',
-        '-i', 'audio=Default',
+        '-audio_buffer_size', '50',
+        '-i', `audio=${device}`,
         '-acodec', 'pcm_s16le',
         '-ar', String(this.sampleRate),
         '-ac', String(this.channels),
@@ -760,9 +801,14 @@ export class AudioCapture {
         'pipe:1'
       ];
     } else if (osPlatform === 'win32') {
+      const device = this.deviceName;
+      if (!device) {
+        return;
+      }
       ffmpegArgs = [
         '-f', 'dshow',
-        '-i', 'audio=Default',
+        '-audio_buffer_size', '50',
+        '-i', `audio=${device}`,
         '-acodec', 'pcm_s16le',
         '-ar', String(this.sampleRate),
         '-ac', String(this.channels),
