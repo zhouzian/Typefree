@@ -128,8 +128,8 @@ export class TextOutput {
       
       if (targetApp && timeSinceRemembered <= 5000 && targetApp !== 'Electron' && targetApp !== 'Typefree') {
         try {
-          await new Promise<void>((resolve, reject) => {
-            exec(`powershell -command "(New-Object -ComObject WScript.Shell).AppActivate('${targetApp}')`, (err: Error | null) => {
+          await new Promise<void>((resolve) => {
+            exec(`powershell -command "(New-Object -ComObject WScript.Shell).AppActivate('${targetApp}')"`, (err: Error | null) => {
               if (err) {
                 log(`[TextOutput] Activate ${targetApp} failed: ${err}`);
               } else {
@@ -146,7 +146,7 @@ export class TextOutput {
       }
       
       await new Promise<void>((resolve, reject) => {
-        exec('powershell -command "Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.SendKeys]::SendWait(\\"^v\\")"', (err: Error | null) => {
+        exec(`powershell -command "Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.SendKeys]::SendWait('^v')"`, (err: Error | null) => {
           if (err) {
             log(`[TextOutput] Paste failed: ${err}`);
             reject(err);
@@ -156,7 +156,7 @@ export class TextOutput {
           }
         });
       });
-    } catch (error) {
+    } catch (error: any) {
       log(`[TextOutput] Clipboard approach failed: ${error}`);
       throw error;
     }

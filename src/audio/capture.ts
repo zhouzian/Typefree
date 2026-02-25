@@ -12,10 +12,12 @@ const MIN_TIME_BETWEEN_TRANSCRIPTS = 1500;
 const MIN_SPEECH_CHUNKS = 10;
 const NOISE_FLOOR_MARGIN = 3.0;
 const NOISE_HISTORY_SIZE = 100;
-const MIN_SPEECH_THRESHOLD = 0.015;
-const MIN_SILENCE_THRESHOLD = 0.008;
 const STARTUP_CALIBRATION_SECONDS = 6;
 const NOISE_PERCENTILE = 50;
+
+// Platform-specific thresholds
+const MIN_SPEECH_THRESHOLD = process.platform === 'win32' ? 0.005 : 0.015;
+const MIN_SILENCE_THRESHOLD = process.platform === 'win32' ? 0.003 : 0.008;
 
 interface STTService {
   transcribe(audioBuffer: Buffer): Promise<string>;
@@ -501,9 +503,7 @@ export class AudioCapture {
     this.totalSpeechChunks = 0;
     
     this.noiseHistory = [];
-    this.noiseFloor = 0.01;
-    this.speechThreshold = 0.03;
-    this.silenceThreshold = 0.015;
+    // Don't reset calibrated thresholds! Keep the values from runStartupCalibration()
     this.lastLevel = 0;
 
     if (this.deviceId === undefined) {
@@ -635,6 +635,11 @@ export class AudioCapture {
   }
 
   private updateThresholds(): void {
+    // Only update thresholds dynamically on macOS - Windows has fixed calibrated thresholds
+    if (process.platform === 'win32') {
+      return;
+    }
+
     const levels = [...this.noiseHistory];
     
     levels.sort((a, b) => a - b);
